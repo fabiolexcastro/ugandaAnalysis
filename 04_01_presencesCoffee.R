@@ -32,17 +32,32 @@ occ$clase <- factor(occ$clase, levels = c(1,2))
 uga <- getData('GADM', country = 'UGA', level = 0)
 coordinates(occ) <- ~ Lon + Lat
 crs(occ) <- crs(uga)
-tst <- over(occ, uga) %>% tbl_df() 
-tst[complete.cases(tst),]
+occ <- raster::extract(uga, occ) %>% cbind(coordinates(occ), occ@data) %>% tbl_df(.)
+occ <- occ[complete.cases(occ),]
+coordinates(occ) <- ~ Lon + Lat
+occ <- as.data.frame(occ) %>% dplyr::select(Lon, Lat, clase) %>% tbl_df()
+occ <- occ %>% rename(Coffee = clase) 
+occ <- occ %>% mutate(Coffee = ifelse(Coffee == 1, 'Robusta', 'Arabica'))
 
 # Map for the presences
-ggplot(data = occ, aes(x = Lon, y = Lat, colour = clase)) +
+gg <- ggplot(data = occ, aes(x = Lon, y = Lat, colour = Coffee)) +
   geom_point() +
+  scale_colour_manual(na.value = 'white', values = c('#FFBF00', '#8A4B08'), labels = c('Arabica', 'Robusta')) +
   geom_polygon(data = uga, aes(x = long, y = lat, group = group), color = 'grey', fill = 'NA') +
   coord_equal() +
   theme_bw() +
-  labs(fill = 'Coffee')
+  labs(fill = 'Coffee') +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  theme(panel.background = element_rect(fill = 'white', colour = 'black'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = 'top') 
 
+ggsave(gg, filename = '../_png/_maps/_base/coffeePresences.png', units = 'in', width = 9, height = 9, dpi = 150)
 
+# Write the final table
+write.csv(occ, '../_data/_tbl/occ_uga.csv', row.names = FALSE)
 
+ 
 
