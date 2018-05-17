@@ -5,8 +5,27 @@ require(rgdal)
 require(tidyverse)
 require(sf)
 
+# Initial setup
+g <- gc(reset = TRUE)
+rm(list = ls())
+options(scipen = 999)
+
+# Load data
+crn <- raster('../_RF/_run2/_results/_process/_mixed/RF_2Classes_unccurrent_uga.tif')
+c30 <- raster('../_RF/_run2/_results/_process/_mixed/RF_2Classes_unc_2030_uga.tif')
+c50 <- raster('../_RF/_run2/_results/_process/_mixed/RF_2Classes_unc_2050_uga.tif')
+
+prd <- shapefile('../_data/_shp/_prd/uga1_productionDistricts.shp')
+prd.sf <- st_as_sf(prd)
+lbls <- data_frame(number = 1:6, type = c('Unsuitable', 'Unsuitable', 'Robusta', 'Arabica', 'Limitations', 'Mixed'))
+
+# Visualization
+prd.sf %>% dplyr::select(Coffee) %>% plot()
+unique(prd@data$Coffee)
+plot(crn)
+
 # Functions to use
-myZnl <- function(lyr, msk, prd){
+# myZnl <- function(lyr, msk, prd){
   lyr <- crn
   nm <- names(lyr)
   crd <- rasterToPoints(lyr) %>% as.tibble() 
@@ -46,30 +65,8 @@ myZnl <- function(lyr, msk, prd){
     group_by(diff) %>%
     summarize(count = n())
   
-}
+# }
 
-# Initial setup
-g <- gc(reset = TRUE)
-rm(list = ls())
-options(scipen = 999)
-
-# Load data
-crn <- raster('../_RF/_run2/_results/_process/_mixed/RF_2Classes_unccurrent_uga.tif')
-c30 <- raster('../_RF/_run2/_results/_process/_mixed/RF_2Classes_unc_2030_uga.tif')
-c50 <- raster('../_RF/_run2/_results/_process/_mixed/RF_2Classes_unc_2050_uga.tif')
-
-prd <- shapefile('../_data/_shp/_prd/uga1_productionDistricts.shp')
-prd.sf <- st_as_sf(prd)
-lbls <- data_frame(number = 1:6, type = c('Unsuitable', 'Unsuitable', 'Robusta', 'Arabica', 'Limitations', 'Mixed'))
-
-# Visualization
-prd.sf %>% dplyr::select(Coffee) %>% plot()
-unique(prd@data$Coffee)
-plot(crn)
-
-# Zonal Statistics
-prd@data$ID <- 1:nrow(prd@data)
-msk <- rasterize(prd, crn, field = 'ID')
 
 
 
